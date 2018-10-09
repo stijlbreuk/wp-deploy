@@ -1,9 +1,8 @@
 namespace :db do
-
+  
   ##############################################################################
   ## Create a sensible backup name for SQL files
   ##############################################################################
-
   desc 'Create a sensible backup name for SQL files'
   task :backup_name do
     on roles(:web) do
@@ -92,10 +91,12 @@ namespace :db do
 
   desc 'Take a database dump from remote server'
   task :backup do
+    database = YAML::load_file('config/database.yml')[fetch(:stage).to_s]
     invoke 'db:backup_name'
     on roles(:db) do
       within release_path do
-        execute :wp, "db export - | gzip > #{fetch(:backup_file)}"
+        execute "mysqldump -u #{database['username']} -p#{database['password']} -e \"statement\" -h" 
+        #execute :wp, "db export - | gzip > #{fetch(:backup_file)}"
       end
 
       system('mkdir -p db_backups')
@@ -131,29 +132,36 @@ namespace :db do
   ## Import the local database to your remote environment
   ##############################################################################
 
-  desc 'Import the local database to your remote environment'
+  desc "Imports the local database into your remote environment"
   task :push do
-    invoke 'db:confirm'
+    database = YAML::load_file('config/database.yml')[fetch(:stage).to_s]
+      invoke 'db:confirm'
 
     invoke 'db:backup_name'
     on roles(:db) do
+
       run_locally do
-        execute :mkdir, '-p db_backups'
-        execute :wp, "db export - | gzip > db_backups/#{fetch(:backup_filename)}.sql.gz"
+        execute :mkdir, "-p db_backups"
+        execute :wp, "db export db_backups/#{fetch(:backup_filename)}.sql --add-drop-table"
       end
 
-      upload! "db_backups/#{fetch(:backup_filename)}.sql.gz", "#{fetch(:backup_file)}"
+      upload! "db_backups/#{fetch(:backup_filename)}.sql", "#{fetch(:backup_file)}"
 
       within release_path do
-        execute :gzip, "-c -d #{fetch(:backup_file)} | wp db import -"
+        #execute :wp, "db import #{fetch(:backup_file)}"
+        execute "mysql -u #{database['username']} -p#{database['password']} -h #{database['host']} -D #{database['database']} < #{fetch(:backup_file)}" 
+        #execute "mysql --defaults-extra-file=/var/www/comroy-sanankoro/backup/database.cnf < #{fetch(:backup_file)}"
         execute :wp, "search-replace #{fetch(:wp_localurl)} #{fetch(:stage_url)}"
         execute :rm, "#{fetch(:backup_file)}"
       end
 
       run_locally do
-        execute :rm, "db_backups/#{fetch(:backup_filename)}.sql.gz"
-        execute :rmdir, 'db_backups' if Dir['db_backups/*'].empty?
+        execute :rm, "db_backups/#{fetch(:backup_filename)}.sql"
+        if Dir['db_backups/*'].empty?
+          execute :rmdir, "db_backups"
+        end
       end
+
     end
   end
 
