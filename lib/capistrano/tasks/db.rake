@@ -95,7 +95,8 @@ namespace :db do
     invoke 'db:backup_name'
     on roles(:db) do
       within release_path do
-        execute "mysqldump -u #{database['username']} -p#{database['password']} -e \"statement\" -h" 
+        # Don't add a space between '-p' and '#{database...', this is how the mysqldump command works.
+        execute "mysqldump -u #{database['username']} -p#{database['password']} -e #{database['database']} -h #{database['host']} | gzip > #{fetch(:backup_file)}" 
         #execute :wp, "db export - | gzip > #{fetch(:backup_file)}"
       end
 
