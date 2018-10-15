@@ -15,7 +15,7 @@ namespace :db do
 
       # Set the filename as the current timestamp
       set :backup_filename, backup_time
-
+      system("echo #{shared_path}")
       # Get the file's absolute path
       set :backup_file, "#{shared_path}/db_backups/#{backup_time}.sql.gz"
     end
@@ -95,9 +95,7 @@ namespace :db do
     invoke 'db:backup_name'
     on roles(:db) do
       within release_path do
-        # Don't add a space between '-p' and '#{database...', this is how the mysqldump command works.
-        execute "mysqldump -u #{database['username']} -p#{database['password']} -e #{database['database']} -h #{database['host']} | gzip > #{fetch(:backup_file)}" 
-        #execute :wp, "db export - | gzip > #{fetch(:backup_file)}"
+        execute "mysqldump --defaults-file=#{fetch(:deploy_to)}.mysql.cnf #{database['database']} | gzip > #{fetch(:backup_file)}"
       end
 
       system('mkdir -p db_backups')
@@ -149,9 +147,7 @@ namespace :db do
       upload! "db_backups/#{fetch(:backup_filename)}.sql", "#{fetch(:backup_file)}"
 
       within release_path do
-        #execute :wp, "db import #{fetch(:backup_file)}"
-        execute "mysql -u #{database['username']} -p#{database['password']} -h #{database['host']} -D #{database['database']} < #{fetch(:backup_file)}" 
-        #execute "mysql --defaults-extra-file=/var/www/comroy-sanankoro/backup/database.cnf < #{fetch(:backup_file)}"
+        execute "mysql --defaults-file=#{fetch(:deploy_to)}.mysql.cnf #{database['database']} < #{fetch(:backup_file)}"
         execute :wp, "search-replace #{fetch(:wp_localurl)} #{fetch(:stage_url)}"
         execute :rm, "#{fetch(:backup_file)}"
       end
@@ -176,10 +172,7 @@ namespace :db do
       within fetch(:deploy_to) do
         database = YAML.load_file('config/database.yml')[fetch(:stage).to_s]
         configuration_file_name = '.mysql.cnf'
-        # Test if file exists, if not: create an empty file
-        # execute :test, '-f', configuration_file_name, '||', 'touch', configuration_file_name
-        # Create .mysql.cnf file contents
-        mysql_config_contents = "[client]\nhost=#{database['host']}\ndatabase=#{database['database']}\nusername=#{database['username']}\npassword=#{database['password']}"
+        mysql_config_contents = "[client]\nhost=#{database['host']}\nuser=#{database['username']}\npassword=#{database['password']}"
         io_mysql_config_contents = StringIO.new(mysql_config_contents)
         upload! io_mysql_config_contents, File.join(fetch(:deploy_to), configuration_file_name)
         execute :chmod, '600', configuration_file_name
