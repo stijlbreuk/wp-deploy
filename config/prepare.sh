@@ -7,4 +7,4 @@ git checkout $(git tag -l --sort -version:refname | head -n 1)
 cd ..
 git remote rm origin
 git add -A
-git commit -m "Inital commit"
+git commit -m "Initial commit"
