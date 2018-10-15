@@ -15,7 +15,6 @@ namespace :db do
 
       # Set the filename as the current timestamp
       set :backup_filename, backup_time
-      system("echo #{shared_path}")
       # Get the file's absolute path
       set :backup_file, "#{shared_path}/db_backups/#{backup_time}.sql.gz"
     end
