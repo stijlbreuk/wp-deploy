@@ -94,7 +94,7 @@ namespace :db do
     invoke 'db:backup_name'
     on roles(:db) do
       within release_path do
-        execute "mysqldump --defaults-file=#{fetch(:deploy_to)}.mysql.cnf #{database['database']} | gzip > #{fetch(:backup_file)}"
+        execute "mysqldump --defaults-file=#{fetch(:deploy_to)}/.mysql.cnf #{database['database']} | gzip > #{fetch(:backup_file)}"
       end
 
       system('mkdir -p db_backups')
@@ -146,7 +146,7 @@ namespace :db do
       upload! "db_backups/#{fetch(:backup_filename)}.sql", "#{fetch(:backup_file)}"
 
       within release_path do
-        execute "mysql --defaults-file=#{fetch(:deploy_to)}.mysql.cnf #{database['database']} < #{fetch(:backup_file)}"
+        execute "mysql --defaults-file=#{fetch(:deploy_to)}/.mysql.cnf #{database['database']} < #{fetch(:backup_file)}"
         execute :wp, "search-replace #{fetch(:wp_localurl)} #{fetch(:stage_url)}"
         execute :rm, "#{fetch(:backup_file)}"
       end
