@@ -172,6 +172,9 @@ namespace :wp do
       invoke 'wp:setup:remote'
       invoke 'wp:setup:local'
     end
+    
+    after :remote, 'db:create_mysql_config'
+    after :local, 'db:create_mysql_config'
   end
 
   namespace :core do

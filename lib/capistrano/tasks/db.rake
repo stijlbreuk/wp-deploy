@@ -166,4 +166,24 @@ namespace :db do
     end
   end
 
+  ############################################################################
+  ## Setup MySQL config file
+  ############################################################################
+  desc 'Create MySQL config file on the remote environment'
+  task :create_mysql_config do
+    on roles(:web) do
+      # Execute code block within deploy_to folder
+      within fetch(:deploy_to) do
+        database = YAML.load_file('config/database.yml')[fetch(:stage).to_s]
+        configuration_file_name = '.mysql.cnf'
+        # Test if file exists, if not: create an empty file
+        # execute :test, '-f', configuration_file_name, '||', 'touch', configuration_file_name
+        # Create .mysql.cnf file contents
+        mysql_config_contents = "[client]\nhost=#{database['host']}\ndatabase=#{database['database']}\nusername=#{database['username']}\npassword=#{database['password']}"
+        io_mysql_config_contents = StringIO.new(mysql_config_contents)
+        upload! io_mysql_config_contents, File.join(fetch(:deploy_to), configuration_file_name)
+        execute :chmod, '600', configuration_file_name
+      end
+    end
+  end
 end
