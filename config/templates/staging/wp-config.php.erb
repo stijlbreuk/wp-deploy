@@ -24,7 +24,7 @@ define('WP_CONTENT_URL', '<%= wp_siteurl %>/content');
  * for the `dirname(__FILE__)` method below.
  */
 
-define('WP_CONTENT_DIR', realpath(dirname(__FILE__) . '/content'));
+define('WP_CONTENT_DIR', realpath(dirname(__FILE__) . '/../current/content'));
 // define('WP_CONTENT_DIR', realpath($_SERVER['DOCUMENT_ROOT'] . '/content'));
 
 if ( !defined('ABSPATH') ){
