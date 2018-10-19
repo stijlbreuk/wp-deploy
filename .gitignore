@@ -4,6 +4,10 @@
 *.sql
 *.sqlite
 database.yml
+*.sql.gz
+*.sql.zip
+*.sqlite.gz
+*.sqlite.zip
 
 # OS generated files #
 ######################
@@ -31,4 +35,3 @@ wp-config.php
 _assets
 node_modules
 ai-cache/*
-db_backups/*
